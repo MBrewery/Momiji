@@ -1,20 +1,18 @@
 package org.mbrew.momiji.compile
 
+import org.mbrew.momiji.codegen.CodeGenerator
 import org.mbrew.momiji.sema.SemanticProcessor
 
 class Compiler(
     val language: Language,
-    val target: Target = Target.JVM,
-) : (String) -> Distribution {
-    fun compile(src: String): Distribution = CompilerImpl.compile(src, language, target)
-
-    override operator fun invoke(p1: String) = compile(p1)
+) {
+    fun compile(src: SourceFile): Distribution = CompilerImpl.compile(src, language)
 }
 
 object CompilerImpl {
-    fun compile(src: String, language: Language, target: Target): Distribution {
+    fun compile(src: SourceFile, language: Language): Distribution {
         val ast = language.parser.parse(src)
         SemanticProcessor.process(ast)
-        return target.generator.generate(ast)
+        return CodeGenerator.generate(ast)
     }
 }

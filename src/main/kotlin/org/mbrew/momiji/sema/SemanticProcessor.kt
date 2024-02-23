@@ -1,9 +1,9 @@
 package org.mbrew.momiji.sema
 
-import org.mbrew.momiji.ast.Module
+import org.mbrew.momiji.ast.File
 
 object SemanticProcessor {
-    fun process(module: Module) {
+    fun process(file: File) {
         TODO()
     }
 }
