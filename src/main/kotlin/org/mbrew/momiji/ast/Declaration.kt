@@ -1,64 +1,86 @@
 package org.mbrew.momiji.ast
 
+import org.mbrew.momiji.sema.Symbol
+import org.mbrew.momiji.sema.ClassDesc
+import org.mbrew.momiji.sema.SymbolTable
+import org.mbrew.momiji.sema.TypeRefSymbol
+
 class File(
-    val inPackage: Symbol,
+    val inPackage: String,
     val imports: List<Import>,
     val classes: List<ClassDecl>,
 ) : AstNode
 
 sealed interface Import : AstNode {
     class Single(
-        val klass: Symbol
+        val klass: String,
+        val alias: String? = null,
     ) : Import
     class ImportAll(
-        val fromPackage: Symbol
+        val fromPackage: String
     ) : Import
     class Static(
-        val klass: Symbol,
-        val field: Symbol
+        val klass: String,
+        val field: String,
+        val alias: String? = null
     ) : Import
 }
 
 class ClassDecl(
-    val packageName: Symbol,
-    val name: Symbol,
-    val modifiers: List<Modifier> = listOf(Modifier.Public, Modifier.Final),
+    val packageName: String,
+    val name: String,
+    val modifiers: MutableList<Modifier> = mutableListOf(Modifier.Public, Modifier.Final),
 
-    val superClass: Type = SpecialType.Top,
-    val interfaces: List<Type> = emptyList(),
-    val typeParams: List<TypeParam> = emptyList(),
+    val superClass: Symbol = TypeRefSymbol(ClassDesc.Object),
+    val interfaces: MutableList<Symbol> = mutableListOf(),
+    val typeParams: MutableList<TypeParam> = mutableListOf(),
 
-    val fields: List<Field> = emptyList(),
-    val methods: List<Method> = emptyList(),
-    val constructors: List<Method> = emptyList(),
-    val staticBlock: Stmt = NothingStmt,
+    val fields: MutableList<FieldDecl> = mutableListOf(),
+    val methods: MutableList<MethodDecl> = mutableListOf(),
+    val constructors: MutableList<ConstructorDecl> = mutableListOf(),
 
-    val innerClasses: List<ClassDecl> = emptyList(),
-) : AstNode
+    // dsl should process init order
+    val initBlocks: MutableList<Stmt> = mutableListOf(),
+    val staticBlocks: MutableList<Stmt> = mutableListOf(),
+
+    val innerClasses: MutableList<ClassDecl> = mutableListOf(),
+) : AstNode {
+    lateinit var thisType: ClassDesc
+}
 
 class TypeParam(
     val name: Symbol,
-    val upperBounds: List<Type>,
-    val lowerBounds: List<Type>,
+    val upperBounds: List<Symbol>,
+    val lowerBounds: List<Symbol>
 ) : AstNode
 
-class Field(
+class FieldDecl(
     val name: Symbol,
-    val type: Type,
-    val initExpr: Expr?
+    val type: Symbol,
+    val modifiers: List<Modifier>,
 ) : AstNode
 
-class Method(
+class MethodDecl(
     val name: Symbol,
-    val modifiers: List<Modifier> = listOf(Modifier.Public, Modifier.Final),
+    val modifiers: List<Modifier>,
     val params: List<Param>,
-    val returnType: Type = SpecialType.Unit,
+    val returnType: Symbol,
     val body: Stmt
-) : AstNode
+) : AstNode {
+    val symbolTable: SymbolTable = SymbolTable()
+}
+
+class ConstructorDecl(
+    val modifiers: List<Modifier>,
+    val params: List<Param>,
+    val body: Stmt
+) : AstNode {
+    val symbolTable: SymbolTable = SymbolTable()
+}
 
 class Param(
     val name: Symbol,
-    val type: Type
+    val type: Symbol
 ) : AstNode
 
 /**

@@ -1,10 +1,14 @@
 package org.mbrew.momiji.ast
 
+import org.mbrew.momiji.sema.Symbol
+import org.mbrew.momiji.sema.PrimitiveTypeDesc
+import org.mbrew.momiji.sema.TypeDesc
+
 sealed class Expr(
-    var type: Type = SpecialType.Never
+    var type: TypeDesc = TypeDesc.Unknown
 ) : AstNode
 
-data object NothingExpr : Expr(SpecialType.Unit)
+data object NothingExpr : Expr(PrimitiveTypeDesc.Unit)
 
 /**
  * Supported binary operators
@@ -47,16 +51,20 @@ class UnaryExpr(val operand: Expr, val operator: UnaryOperator) : Expr()
 class TernaryExpr(val condition: Expr, val thenExpr: Expr, val elseExpr: Expr) : Expr()
 
 // 'instanceof' in java
-class IsExpr(val left: Expr, var right: Symbol) : Expr(PrimitiveType.Boolean)
+class IsExpr(val left: Expr, var right: Symbol) : Expr(PrimitiveTypeDesc.Boolean)
 
 // explicit type cast in java
 class AsExpr(val left: Expr, var right: Symbol) : Expr()
 
-class NewExpr(val klass: Type, val args: List<Expr>) : Expr()
+class NewExpr(var klass: Symbol, val args: List<Expr>) : Expr()
 
-class VarExpr(val varName: Symbol) : Expr()
+class VarExpr(var varName: Symbol) : Expr()
 
-class CallExpr(val receiver: Expr, val methodName: Symbol, val args: List<Expr>) : Expr()
+/*
+ * note: in backend, if receiver is null & callee is resolved to a type,
+ * it'll be replaced to a constructor call.
+ */
+class CallExpr(var receiver: Expr, val callee: Symbol, val args: List<Expr>) : Expr()
 
 sealed class AssignableExpr : Expr()
 
@@ -67,13 +75,13 @@ class KeyAccessExpr(val receiver: Expr, val args: List<Expr>) : AssignableExpr()
 
 class AssignExpr(val lVal: AssignableExpr, val value: Expr) : AssignableExpr()
 
-sealed class LiteralExpr(type: Type) : Expr(type)
-class IntLiteral(val value: Int) : LiteralExpr(PrimitiveType.Int)
-class LongLiteral(val value: Long) : LiteralExpr(PrimitiveType.Long)
-class FloatLiteral(val value: Float) : LiteralExpr(PrimitiveType.Float)
-class DoubleLiteral(val value: Double) : LiteralExpr(PrimitiveType.Double)
-class CharLiteral(val value: String) : LiteralExpr(PrimitiveType.Char)
-class BooleanLiteral private constructor(val value: Boolean) : LiteralExpr(PrimitiveType.Boolean) {
+sealed class LiteralExpr(type: TypeDesc) : Expr(type)
+class IntLiteral(val value: Int) : LiteralExpr(PrimitiveTypeDesc.Int)
+class LongLiteral(val value: Long) : LiteralExpr(PrimitiveTypeDesc.Long)
+class FloatLiteral(val value: Float) : LiteralExpr(PrimitiveTypeDesc.Float)
+class DoubleLiteral(val value: Double) : LiteralExpr(PrimitiveTypeDesc.Double)
+class CharLiteral(val value: String) : LiteralExpr(PrimitiveTypeDesc.Char)
+class BooleanLiteral private constructor(val value: Boolean) : LiteralExpr(PrimitiveTypeDesc.Boolean) {
     companion object {
         @JvmStatic
         val True = BooleanLiteral(true)
@@ -83,8 +91,8 @@ class BooleanLiteral private constructor(val value: Boolean) : LiteralExpr(Primi
     }
 }
 
-class StringLiteral(val value: String) : LiteralExpr(SpecialType.String)
-data object NullLiteral : LiteralExpr(SpecialType.Bottom)
+class StringLiteral(val value: String) : LiteralExpr(TODO())
+data object NullLiteral : LiteralExpr(TypeDesc.Bottom)
 
 
 

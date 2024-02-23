@@ -1,6 +1,9 @@
 package org.mbrew.momiji.ast
 
-interface Stmt : AstNode
+import org.mbrew.momiji.sema.NothingSymbol
+import org.mbrew.momiji.sema.Symbol
+
+sealed interface Stmt : AstNode
 
 object NothingStmt : Stmt
 
