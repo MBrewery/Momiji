@@ -43,7 +43,7 @@ enum class UnaryOperator : AstNode {
     Pos, Neg,
     Not,
     BitNot,
-    PrefixInc, PrefixDec, PostfixInc, PostfixDec
+    PreInc, PreDec, PostInc, PostDec
 }
 
 class UnaryExpr(val operand: Expr, val operator: UnaryOperator) : Expr()
@@ -51,24 +51,24 @@ class UnaryExpr(val operand: Expr, val operator: UnaryOperator) : Expr()
 class TernaryExpr(val condition: Expr, val thenExpr: Expr, val elseExpr: Expr) : Expr()
 
 // 'instanceof' in java
-class IsExpr(val left: Expr, var right: Symbol) : Expr(PrimitiveTypeDesc.Boolean)
+class IsExpr(val left: Expr, var right: String) : Expr(PrimitiveTypeDesc.Boolean)
 
 // explicit type cast in java
-class AsExpr(val left: Expr, var right: Symbol) : Expr()
+class AsExpr(val left: Expr, var right: String) : Expr()
 
-class NewExpr(var klass: Symbol, val args: List<Expr>) : Expr()
+class NewExpr(var klass: String, val args: List<Expr>) : Expr()
 
-class VarExpr(var varName: Symbol) : Expr()
+class VarExpr(var varName: String) : Expr()
 
 /*
  * note: in backend, if receiver is null & callee is resolved to a type,
  * it'll be replaced to a constructor call.
  */
-class CallExpr(var receiver: Expr, val callee: Symbol, val args: List<Expr>) : Expr()
+class CallExpr(var receiver: Expr, val callee: String, val args: List<Expr>) : Expr()
 
 sealed class AssignableExpr : Expr()
 
-class FieldAccessExpr(val receiver: Expr, val varName: Symbol) : AssignableExpr()
+class FieldAccessExpr(val receiver: Expr, val field: String) : AssignableExpr()
 
 // array index access is one-arg version
 class KeyAccessExpr(val receiver: Expr, val args: List<Expr>) : AssignableExpr()

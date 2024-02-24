@@ -1,6 +1,7 @@
 package org.mbrew.momiji.sema
 
 import org.mbrew.momiji.ast.Modifier
+import java.lang.reflect.TypeVariable
 
 sealed class TypeDesc(
     val fullName: String,
@@ -14,10 +15,11 @@ sealed class TypeDesc(
 
 class ClassDesc(
     fullName: String,
-    val access: List<Modifier>,
-    val superClass: TypeDesc,
-    val interfaces: List<TypeDesc>,
+    val modifiers: Int,
+    val superClass: TypeDesc? = Object,
+    val interfaces: List<TypeDesc> = emptyList(),
     val genericParameters: List<GenericDesc> = emptyList(),
+    val outerClass: TypeDesc? = null,
 ) : TypeDesc(fullName) {
     companion object {
         @JvmStatic
@@ -25,14 +27,20 @@ class ClassDesc(
             when {
                 klass.isArray -> ArrayDesc(fromClass(klass.componentType))
                 klass.isPrimitive -> PrimitiveTypeDesc.find(klass)
+                else -> ClassDesc(
+                    klass.name,
+                    klass.modifiers,
+                    fromClass(klass.superclass),
+                    klass.interfaces.map(::fromClass),
+                    klass.typeParameters.map { GenericDesc.fromTypeParam(it) },
+                    fromClass(klass.enclosingClass),
+                )
             }
             TODO()
         }
 
         @JvmStatic
         val Object = fromClass(Any::class.java)
-        @JvmStatic
-        val String = fromClass(String::class.java)
     }
 }
 
@@ -40,16 +48,29 @@ class ArrayDesc(
     val elementType: TypeDesc,
 ) : TypeDesc("${elementType.fullName}[]")
 
+class InvokableDesc(
+    val returnType: TypeDesc,
+    val parameters: List<TypeDesc>,
+) : TypeDesc("<invokable>")
+
+class PackageDesc(
+    val path: String,
+) : TypeDesc(path)
+
 enum class GenericBoundType {
-    EXTENDS,
-    SUPER,
-    NONE,
+    EXTENDS, SUPER, NONE,
 }
 
 class GenericDesc(
     val name: String,
     val boundType: GenericBoundType = GenericBoundType.NONE,
-)
+) {
+    companion object {
+        fun fromTypeParam(tv: TypeVariable<out Class<*>>): GenericDesc {
+            return GenericDesc(tv.name)
+        }
+    }
+}
 
 class PrimitiveTypeDesc private constructor(
     name: String,
